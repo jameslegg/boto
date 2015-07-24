@@ -29,11 +29,11 @@ import time
 
 from boto.exception import GSResponseError
 from boto.gs.connection import GSConnection
-from tests.integration.gs.util import has_google_credentials
+from tests.integration.gs import util
 from tests.integration.gs.util import retry
 from tests.unit import unittest
 
-@unittest.skipUnless(has_google_credentials(),
+@unittest.skipUnless(util.has_google_credentials(),
                      "Google credentials are required to run the Google "
                      "Cloud Storage tests.  Update your boto.cfg to run "
                      "these tests.")
@@ -55,11 +55,19 @@ class GSTestCase(unittest.TestCase):
 
         while(len(self._buckets)):
             b = self._buckets[-1]
-            bucket = self._conn.get_bucket(b)
-            while len(list(bucket.list_versions())) > 0:
-                for k in bucket.list_versions():
-                    bucket.delete_key(k.name, generation=k.generation)
-            bucket.delete()
+            try:
+                bucket = self._conn.get_bucket(b)
+                while len(list(bucket.list_versions())) > 0:
+                    for k in bucket.list_versions():
+                        try:
+                            bucket.delete_key(k.name, generation=k.generation)
+                        except GSResponseError, e:
+                            if e.status != 404:
+                                raise
+                bucket.delete()
+            except GSResponseError, e:
+                if e.status != 404:
+                    raise
             self._buckets.pop()
 
     def _GetConnection(self):

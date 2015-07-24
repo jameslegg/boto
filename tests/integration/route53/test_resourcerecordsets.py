@@ -1,4 +1,4 @@
-#ovei Copyright (c) 2013 Amazon.com, Inc. or its affiliates.  All Rights Reserved
+# Copyright (c) 2013 Amazon.com, Inc. or its affiliates.  All Rights Reserved
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the
@@ -20,71 +20,72 @@
 # IN THE SOFTWARE.
 #
 
-import unittest
-from boto.route53.connection import Route53Connection
+from tests.compat import unittest
+from tests.integration.route53 import Route53TestCase
+
 from boto.route53.record import ResourceRecordSets
-from boto.exception import TooManyRecordsException
 
 
-class TestRoute53ResourceRecordSets(unittest.TestCase):
-    def setUp(self):
-        super(TestRoute53ResourceRecordSets, self).setUp()
-        self.conn = Route53Connection()
-        self.zone = self.conn.create_zone('example.com')
-
-    def tearDown(self):
-        self.zone.delete()
-        super(TestRoute53ResourceRecordSets, self).tearDown()
-
+class TestRoute53ResourceRecordSets(Route53TestCase):
     def test_add_change(self):
         rrs = ResourceRecordSets(self.conn, self.zone.id)
 
-        created = rrs.add_change("CREATE", "vpn.example.com.", "A")
+        created = rrs.add_change("CREATE", "vpn.%s." % self.base_domain, "A")
         created.add_value('192.168.0.25')
         rrs.commit()
 
         rrs = ResourceRecordSets(self.conn, self.zone.id)
-        deleted = rrs.add_change('DELETE', "vpn.example.com.", "A")
+        deleted = rrs.add_change('DELETE', "vpn.%s." % self.base_domain, "A")
         deleted.add_value('192.168.0.25')
         rrs.commit()
 
     def test_record_count(self):
         rrs = ResourceRecordSets(self.conn, self.zone.id)
-        hosts = 230
-        hosts = 2
+        hosts = 101
+
         for hostid in range(hosts):
-            rec = "test" + str(hostid) + ".example.com"
-            created = rrs.add_change("CREATE", rec , "A")
+            rec = "test" + str(hostid) + ".%s" % self.base_domain
+            created = rrs.add_change("CREATE", rec, "A")
             ip = '192.168.0.' + str(hostid)
             created.add_value(ip)
+
+            # Max 100 changes per commit
+            if (hostid + 1) % 100 == 0:
+                rrs.commit()
+                rrs = ResourceRecordSets(self.conn, self.zone.id)
 
         rrs.commit()
 
         all_records = self.conn.get_all_rrsets(self.zone.id)
 
-        #first time around was always fine
+        # First time around was always fine
         i = 0
         for rset in all_records:
             i += 1
 
-        #second time was a failure
+        # Second time was a failure
         i = 0
         for rset in all_records:
             i += 1
 
-        #cleanup indivual records
+        # Cleanup indivual records
         rrs = ResourceRecordSets(self.conn, self.zone.id)
         for hostid in range(hosts):
-            rec = "test" + str(hostid) + ".example.com"
-            deleted = rrs.add_change("DELETE", rec , "A")
+            rec = "test" + str(hostid) + ".%s" % self.base_domain
+            deleted = rrs.add_change("DELETE", rec, "A")
             ip = '192.168.0.' + str(hostid)
             deleted.add_value(ip)
 
+            # Max 100 changes per commit
+            if (hostid + 1) % 100 == 0:
+                rrs.commit()
+                rrs = ResourceRecordSets(self.conn, self.zone.id)
+
         rrs.commit()
-        
-        #2nd count should match the number of hosts plus NS/SOA records
+
+        # 2nd count should match the number of hosts plus NS/SOA records
         records = hosts + 2
-        self.assertEqual(i,records)
+        self.assertEqual(i, records)
 
 if __name__ == '__main__':
     unittest.main()

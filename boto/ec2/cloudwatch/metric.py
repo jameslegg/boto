@@ -77,13 +77,6 @@ class Metric(object):
         :param statistics: A list of statistics names Valid values:
             Average | Sum | SampleCount | Maximum | Minimum
 
-        :type dimensions: dict
-        :param dimensions: A dictionary of dimension key/values where
-                           the key is the dimension name and the value
-                           is either a scalar value or an iterator
-                           of values to be associated with that
-                           dimension.
-
         :type unit: string
         :param unit: The unit for the metric.  Value values are:
             Seconds | Microseconds | Milliseconds | Bytes | Kilobytes |
@@ -155,9 +148,10 @@ class Metric(object):
         :type statistic: string
         :param statistic: The statistic for the metric.
 
-        :param dimension_filters: A dictionary containing name/value
-            pairs that will be used to filter the results.  The key in
-            the dictionary is the name of a Dimension.  The value in
+        :type dimensions: dict
+        :param dimension: A dictionary containing name/value
+            pairs that will be used to filter the results. The key in
+            the dictionary is the name of a Dimension. The value in
             the dictionary is either a scalar value of that Dimension
             name that you want to filter on, a list of values to
             filter on or None if you want all metrics with that

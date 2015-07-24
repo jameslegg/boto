@@ -6,7 +6,7 @@ import boto.handler
 import boto.resultset
 import boto.cloudformation
 
-SAMPLE_XML = r"""
+SAMPLE_XML = b"""
 <DescribeStacksResponse xmlns="http://cloudformation.amazonaws.com/doc/2010-05-15/">
   <DescribeStacksResult>
     <Stacks>
@@ -52,7 +52,7 @@ SAMPLE_XML = r"""
 </DescribeStacksResponse>
 """
 
-DESCRIBE_STACK_RESOURCE_XML = r"""
+DESCRIBE_STACK_RESOURCE_XML = b"""
 <DescribeStackResourcesResult>
   <StackResources>
     <member>
@@ -77,7 +77,7 @@ DESCRIBE_STACK_RESOURCE_XML = r"""
 </DescribeStackResourcesResult>
 """
 
-LIST_STACKS_XML = r"""
+LIST_STACKS_XML = b"""
 <ListStacksResponse>
  <ListStacksResult>
   <StackSummaries>
@@ -109,21 +109,21 @@ LIST_STACKS_XML = r"""
 </ListStacksResponse>
 """
 
-LIST_STACK_RESOURCES_XML = r"""
+LIST_STACK_RESOURCES_XML = b"""
 <ListStackResourcesResponse>
   <ListStackResourcesResult>
     <StackResourceSummaries>
       <member>
         <ResourceStatus>CREATE_COMPLETE</ResourceStatus>
         <LogicalResourceId>DBSecurityGroup</LogicalResourceId>
-        <LastUpdatedTimestamp>2011-06-21T20:15:58Z</LastUpdatedTimestamp>
+        <LastUpdatedTime>2011-06-21T20:15:58Z</LastUpdatedTime>
         <PhysicalResourceId>gmarcteststack-dbsecuritygroup-1s5m0ez5lkk6w</PhysicalResourceId>
         <ResourceType>AWS::RDS::DBSecurityGroup</ResourceType>
       </member>
       <member>
         <ResourceStatus>CREATE_COMPLETE</ResourceStatus>
         <LogicalResourceId>SampleDB</LogicalResourceId>
-        <LastUpdatedTimestamp>2011-06-21T20:25:57.875643Z</LastUpdatedTimestamp>
+        <LastUpdatedTime>2011-06-21T20:25:57.875643Z</LastUpdatedTime>
         <PhysicalResourceId>MyStack-sampledb-ycwhk1v830lx</PhysicalResourceId>
         <ResourceType>AWS::RDS::DBInstance</ResourceType>
       </member>
@@ -147,8 +147,8 @@ class TestStackParse(unittest.TestCase):
 
     def test_event_creation_time_with_millis(self):
         millis_xml = SAMPLE_XML.replace(
-          "<CreationTime>2013-01-10T05:04:56Z</CreationTime>",
-          "<CreationTime>2013-01-10T05:04:56.102342Z</CreationTime>"
+          b"<CreationTime>2013-01-10T05:04:56Z</CreationTime>",
+          b"<CreationTime>2013-01-10T05:04:56.102342Z</CreationTime>"
         )
 
         rs = boto.resultset.ResultSet([
@@ -201,18 +201,18 @@ class TestStackParse(unittest.TestCase):
             datetime.datetime(2011, 3, 10, 16, 20, 51, 575757)
         )
 
-    def test_list_stacks_time_with_millis(self):
+    def test_list_stacks_time_with_millis_again(self):
         rs = boto.resultset.ResultSet([
             ('member', boto.cloudformation.stack.StackResourceSummary)
         ])
         h = boto.handler.XmlHandler(rs, None)
         xml.sax.parseString(LIST_STACK_RESOURCES_XML, h)
-        timestamp_1 = rs[0].last_updated_timestamp
+        timestamp_1 = rs[0].last_updated_time
         self.assertEqual(
             timestamp_1,
             datetime.datetime(2011, 6, 21, 20, 15, 58)
         )
-        timestamp_2 = rs[1].last_updated_timestamp
+        timestamp_2 = rs[1].last_updated_time
         self.assertEqual(
             timestamp_2,
             datetime.datetime(2011, 6, 21, 20, 25, 57, 875643)
@@ -230,7 +230,7 @@ class TestStackParse(unittest.TestCase):
         # Should also handle "False"
         rs = boto.resultset.ResultSet([('member', boto.cloudformation.stack.Stack)])
         h = boto.handler.XmlHandler(rs, None)
-        sample_xml_upper = SAMPLE_XML.replace('false', 'False')
+        sample_xml_upper = SAMPLE_XML.replace(b'false', b'False')
         xml.sax.parseString(sample_xml_upper, h)
         disable_rollback = rs[0].disable_rollback
         self.assertFalse(disable_rollback)
@@ -238,7 +238,7 @@ class TestStackParse(unittest.TestCase):
     def test_disable_rollback_true(self):
         rs = boto.resultset.ResultSet([('member', boto.cloudformation.stack.Stack)])
         h = boto.handler.XmlHandler(rs, None)
-        sample_xml_upper = SAMPLE_XML.replace('false', 'true')
+        sample_xml_upper = SAMPLE_XML.replace(b'false', b'true')
         xml.sax.parseString(sample_xml_upper, h)
         disable_rollback = rs[0].disable_rollback
         self.assertTrue(disable_rollback)
@@ -246,7 +246,7 @@ class TestStackParse(unittest.TestCase):
     def test_disable_rollback_true_upper(self):
         rs = boto.resultset.ResultSet([('member', boto.cloudformation.stack.Stack)])
         h = boto.handler.XmlHandler(rs, None)
-        sample_xml_upper = SAMPLE_XML.replace('false', 'True')
+        sample_xml_upper = SAMPLE_XML.replace(b'false', b'True')
         xml.sax.parseString(sample_xml_upper, h)
         disable_rollback = rs[0].disable_rollback
         self.assertTrue(disable_rollback)
