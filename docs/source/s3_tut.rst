@@ -63,9 +63,6 @@ AWS_ACCESS_KEY (NOT YOUR SECRET KEY!) could work but I'll leave it to
 your imagination to come up with something.  I'll just assume that you
 found an acceptable name.
 
-The create_bucket method will create the requested bucket if it does not
-exist or will return the existing bucket if it does exist.
-
 Creating a Bucket In Another Location
 -------------------------------------
 
